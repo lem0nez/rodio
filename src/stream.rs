@@ -208,9 +208,13 @@ impl CpalDeviceExt for cpal::Device {
         let (mixer_tx, mut mixer_rx) =
             dynamic_mixer::mixer::<f32>(format.channels(), format.sample_rate().0);
 
+        const IGNORE_BACKEND_ERRORS: [&str; 2] = ["POLLERR", "No such device"];
         let error_callback = |err| {
             if let cpal::StreamError::BackendSpecific { err } = &err {
-                if err.description.contains("POLLERR") {
+                if IGNORE_BACKEND_ERRORS
+                    .iter()
+                    .any(|err_part| err.description.contains(err_part))
+                {
                     // Skip a flooding error message.
                     // Similar issue: https://github.com/RustAudio/rodio/issues/465
                     return;
